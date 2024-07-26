@@ -3,6 +3,7 @@
   "displayName": "i18n-show-value",
   "description": "",
   "version": "0.0.1",
+  "author": "Fuyaode",
   "engines": {
     "vscode": "^1.91.0"
   },
@@ -10,7 +11,9 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:i18n-show-value.helloWorld"
+    "onLanguage:typescript",
+    "onLanguage:javascript",
+    "onSave"
   ],
   "main": "./out/extension.js",
   "contributes": {

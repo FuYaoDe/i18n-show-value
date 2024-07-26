@@ -1,26 +1,49 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
+import * as fs from 'fs';
+import * as path from 'path';
+import _ from 'lodash';
 
-// This method is called when your extension is activated
-// Your extension is activated the very first time the command is executed
+
 export function activate(context: vscode.ExtensionContext) {
+  console.log('Congratulations, your extension "i18n-show-value" is now active!');
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "i18n-show-value" is now active!');
+  const i18nFilePath = path.join(vscode.workspace.rootPath || '', 'src/i18n/locales/zh-TW.json');
 
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
-	const disposable = vscode.commands.registerCommand('i18n-show-value.helloWorld', () => {
-		// The code you place here will be executed every time your command is executed
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from i18n-show-value!');
-	});
+  let i18nData: any = {};
+  // Create default i18n file if it doesn't exist
+  if (fs.existsSync(i18nFilePath)) {
+    i18nData = JSON.parse(fs.readFileSync(i18nFilePath, 'utf8'));
+  } else  {
+    i18nData = {
+      a: {
+        b: '測試'
+      }
+    };
+    vscode.window.showInformationMessage(`use default test i18n ${i18nFilePath}`);
+  }
 
-	context.subscriptions.push(disposable);
+  // Register code lens provider
+  const codeLensProvider = vscode.languages.registerCodeLensProvider('*', {
+    provideCodeLenses(document: vscode.TextDocument): vscode.CodeLens[] {
+      const codeLenses: vscode.CodeLens[] = [];
+      const text = document.getText();
+      const regex = /t\('([^']+)'\)/g;
+      let match: RegExpExecArray | null;
+      while ((match = regex.exec(text)) !== null) {
+        const key = match[1];
+        // const value = i18nData[key.replace(/:/g, '.')] || `Key "${key}" not found`;
+        const value = _.get(i18nData, key.replace(/:/g, '.')) || `Key "${key}" not found`;
+        const line = document.lineAt(document.positionAt(match.index).line);
+        codeLenses.push(new vscode.CodeLens(line.range, {
+          title: `i18n 翻譯: ${value}`,
+          command: ''
+        }));
+      }
+      return codeLenses;
+    }
+  });
+
+  context.subscriptions.push(codeLensProvider);
 }
 
-// This method is called when your extension is deactivated
 export function deactivate() {}
